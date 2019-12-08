@@ -97,12 +97,13 @@ def trace_viterbi(v_matrix, t_matrix):
     viterbi_seq = ""
     last_col = v_matrix[:, len(v_matrix[0]) - 1]
     curr = np.where(last_col == max(last_col))[0][0]
-    for letter in range(len(v_matrix) - 1, 1, -1):  # until 1? 0?
+    length = len(v_matrix) - 1
+    for letter in range(len(v_matrix[0]) - 1, 1, -1):  # until 1? 0?
         curr = t_matrix[int(curr)][letter]
-        if curr == 0 or curr == 1 or curr == len(v_matrix)-2 or curr == len(v_matrix) - 1:
-            viterbi_seq = viterbi_seq + "B"
+        if curr == 0 or curr == 1 or curr == length or curr == length - 1:
+            viterbi_seq = "B " + viterbi_seq
         else:
-            viterbi_seq = viterbi_seq + "M"
+            viterbi_seq = "M " + viterbi_seq
 
     return viterbi_seq
 
@@ -113,7 +114,8 @@ if __name__ == '__main__':
     # k = emission_table.shape[0]
     tau = init_tau(k, 0.1, 0.1)
     # seq = "TCGAATCCGTACGGTATTAAGTACGGCGCCTCGAATTCGAATCCGTACGGCGCCCCCCGTACGGCGCCTCGAAT"
-    seq = "TAGG"
+    # seq = "TAGG"
+    seq = "CTATTAAG"
     seq = edit_sequence(seq)
     # converted_seq = letters_to_numbers(seq, converting_dict)
     v_matrix, t_matrix = viterbi(seq, tau, emission_table)
