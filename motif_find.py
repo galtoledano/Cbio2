@@ -59,10 +59,11 @@ def viterbi(seq, tau, emisson):
     for letter in range(1, len(seq)):
         for state in range(k):
             prev_col = v_matrix[:, letter-1]
-            tau_row = tau[state]
-            prev_col = prev_col * tau_row
-            max_val = max(prev_col)
-            argmax_index = np.where(prev_col == max_val)[0][0]
+            # tau_row = tau[state]
+            tau_col = tau[:, state]
+            temp_mult = prev_col * tau_col
+            max_val = max(temp_mult)
+            argmax_index = np.where(temp_mult == max_val)[0][0]
             col_index = converting_dict[seq[letter]]
             v_matrix[state][letter] = max_val * emisson[state][col_index]
             t_matrix[state][letter] = argmax_index
@@ -92,15 +93,29 @@ def main():
         raise NotImplementedError
 
 
+def trace_viterbi(v_matrix, t_matrix):
+    viterbi_seq = ""
+    last_col = v_matrix[:, len(v_matrix[0]) - 1]
+    curr = np.where(last_col == max(last_col))[0][0]
+    for letter in range(len(v_matrix) - 1, 1, -1):  # until 1? 0?
+        curr = t_matrix[int(curr)][letter]
+        if curr == 0 or curr == 1 or curr == len(v_matrix)-2 or curr == len(v_matrix) - 1:
+            viterbi_seq = viterbi_seq + "B"
+        else:
+            viterbi_seq = viterbi_seq + "M"
+
+    return viterbi_seq
+
+
 if __name__ == '__main__':
     # main()
-    emission_table, k = read_emission("try.tsv")
+    emission_table, k = read_emission("tata.tsv")
     # k = emission_table.shape[0]
     tau = init_tau(k, 0.1, 0.1)
     # seq = "TCGAATCCGTACGGTATTAAGTACGGCGCCTCGAATTCGAATCCGTACGGCGCCCCCCGTACGGCGCCTCGAAT"
     seq = "TAGG"
     seq = edit_sequence(seq)
     # converted_seq = letters_to_numbers(seq, converting_dict)
-    res_v, t = viterbi(seq, tau, emission_table)
-    print(res_v)
+    v_matrix, t_matrix = viterbi(seq, tau, emission_table)
+    print(trace_viterbi(v_matrix, t_matrix))
 
