@@ -87,7 +87,6 @@ def trace_viterbi(v_matrix, t_matrix):
             viterbi_seq = "B" + viterbi_seq
         else:
             viterbi_seq = "M" + viterbi_seq
-
     return viterbi_seq
 
 
@@ -114,18 +113,48 @@ def print_viterbi_output(original_seq, viterbi_seq):
                 index_org_seq += 1
             print("\n")
 
+
 def forward_algorithm(seq, tau_mat,  emission_matrix, k):
     f_mat = np.zeros((k, len(seq)))
     f_mat[0][0] = 1
     with np.errstate(divide='ignore'):
         f_mat = np.log(f_mat)
-    for letter in range (1, len(seq)):
+    for letter in range(1, len(seq)):
         for state in range(k):
             sum_of_cols = f_mat[:, letter-1] + tau_mat[:, state] + emission_matrix[state][converting_dict[seq[letter]]]
             f_mat[state][letter] = logsumexp(sum_of_cols)
-    # result = f_mat[len(seq)-1:]
-    return f_mat[-1][-1]
+    return f_mat
 
+
+def backward_algorithm(seq, tau_mat,  emission_matrix, k):
+    b_mat = np.zeros((k, len(seq)))
+    b_mat[-1][-1] = 1
+    with np.errstate(divide='ignore'):
+        b_mat = np.log(b_mat)
+    for letter in range(len(seq)-1, 0, -1):
+        for state in range(k):
+            sum_of_cols = b_mat[:, letter] + tau_mat[state, :] + emission_matrix[:, converting_dict[seq[letter]]]
+            b_mat[state][letter-1] = logsumexp(sum_of_cols)
+    return b_mat
+
+
+def posterior(f_mat, b_mat, k, seq):
+    post_mat = np.zeros((k, len(seq)))
+    with np.errstate(divide='ignore'):
+        post_mat = np.log(post_mat)
+    curr = 0
+    post_seq = ""
+    post_mat = f_mat + b_mat
+    for letter in range(len(post_mat[0]) - 1, 1, -1):
+        letter_col = post_mat[:, letter]
+        curr = np.where(letter_col == max(letter_col))[0][0]
+        # curr = post_mat[int(curr)][letter]
+        if curr == 0 or curr == 1 or curr == k - 1 or curr == k - 2:
+            post_seq = "B" + post_seq
+        else:
+            post_seq = "M" + post_seq
+    x= 2
+    return post_seq
 
 
 def main():
@@ -148,20 +177,21 @@ def main():
         viterbi_seq = trace_viterbi(v_matrix, t_matrix)
         return viterbi_seq
         # print_viterbi_output(args.seq, viterbi_seq)
-        # raise NotImplementedError
 
     elif args.alg == 'forward':
-        res = forward_algorithm(seq, tau,  emission_table, k)
-        print(res)
-        # raise NotImplementedError
+        f_mat = forward_algorithm(seq, tau,  emission_table, k)
+        print(f_mat[-1][-1])
 
     elif args.alg == 'backward':
-        return
-        # raise NotImplementedError
+        b_mat = backward_algorithm(seq, tau, emission_table, k)
+        print(b_mat[0][0])
 
     elif args.alg == 'posterior':
-        return
-        # raise NotImplementedError
+        f_mat = forward_algorithm(seq, tau,  emission_table, k)
+        b_mat = backward_algorithm(seq, tau, emission_table, k)
+        post_seq = posterior(f_mat, b_mat, k, seq)
+        print_viterbi_output(args.seq, post_seq)
+
     else:
         raise NotImplementedError
 
