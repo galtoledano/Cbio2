@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import math
+from scipy.special import logsumexp
 
 converting_dict = {"A": 0, "C": 1, "G": 2, "T": 3, "^": 4, "$": 5}
 LINE_LENGTH = 50
@@ -113,6 +114,19 @@ def print_viterbi_output(original_seq, viterbi_seq):
                 index_org_seq += 1
             print("\n")
 
+def forward_algorithm(seq, tau_mat,  emission_matrix, k):
+    f_mat = np.zeros((k, len(seq)))
+    f_mat[0][0] = 1
+    with np.errstate(divide='ignore'):
+        f_mat = np.log(f_mat)
+    for letter in range (1, len(seq)):
+        for state in range(k):
+            sum_of_cols = f_mat[:, letter-1] + tau_mat[:, state] + emission_matrix[state][converting_dict[seq[letter]]]
+            f_mat[state][letter] = logsumexp(sum_of_cols)
+    # result = f_mat[len(seq)-1:]
+    return f_mat[-1][-1]
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -132,12 +146,13 @@ def main():
     if args.alg == 'viterbi':
         v_matrix, t_matrix = viterbi(seq, tau, emission_table)
         viterbi_seq = trace_viterbi(v_matrix, t_matrix)
-        # return viterbi_seq
-        print_viterbi_output(args.seq, viterbi_seq)
+        return viterbi_seq
+        # print_viterbi_output(args.seq, viterbi_seq)
         # raise NotImplementedError
 
     elif args.alg == 'forward':
-        return
+        res = forward_algorithm(seq, tau,  emission_table, k)
+        print(res)
         # raise NotImplementedError
 
     elif args.alg == 'backward':
