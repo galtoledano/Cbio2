@@ -64,15 +64,15 @@ def viterbi(seq, tau, emission_table):
     t_matrix = np.zeros((k, len(seq)))
     v_matrix[0][0], t_matrix[0][0] = math.log(1), math.log(1)
     for letter in range(1, len(seq)):
-        for state in range(k):
-            prev_col = v_matrix[:, letter-1]
-            tau_col = tau[:, state]
-            temp_mult = prev_col + tau_col
-            max_val = max(temp_mult)
-            argmax_index = np.where(temp_mult == max_val)[0][0]
-            col_index = converting_dict[seq[letter]]
-            v_matrix[state][letter] = max_val + emission_table[state][col_index]
-            t_matrix[state][letter] = argmax_index
+        # for state in range(k):  #todo
+        # prev_col = v_matrix[:, letter-1]
+        # tau_col = tau[:, state]
+        # temp_mult = prev_col + tau_col
+        sum_of_cols = v_matrix[:, letter-1].reshape(-1, 1) + tau
+        max_val = np.max(sum_of_cols,  axis=0).T
+        argmax_index = np.argmax(sum_of_cols, axis=0).T
+        v_matrix[:, letter] = max_val + emission_table[:, converting_dict[seq[letter]]]
+        t_matrix[:, letter] = argmax_index
     return v_matrix, t_matrix
 
 
@@ -120,9 +120,8 @@ def forward_algorithm(seq, tau_mat,  emission_matrix, k):
     with np.errstate(divide='ignore'):
         f_mat = np.log(f_mat)
     for letter in range(1, len(seq)):
-        for state in range(k):
-            sum_of_cols = f_mat[:, letter-1] + tau_mat[:, state] + emission_matrix[state][converting_dict[seq[letter]]]
-            f_mat[state][letter] = logsumexp(sum_of_cols)
+        sum_of_cols = f_mat[:, letter-1].reshape(-1, 1) + tau_mat
+        f_mat[:, letter] = logsumexp(sum_of_cols, axis=0) + emission_matrix[:, converting_dict[seq[letter]]]
     return f_mat
 
 
@@ -132,9 +131,8 @@ def backward_algorithm(seq, tau_mat,  emission_matrix, k):
     with np.errstate(divide='ignore'):
         b_mat = np.log(b_mat)
     for letter in range(len(seq)-1, 0, -1):
-        for state in range(k):
-            sum_of_cols = b_mat[:, letter] + tau_mat[state, :] + emission_matrix[:, converting_dict[seq[letter]]]
-            b_mat[state][letter-1] = logsumexp(sum_of_cols)
+        sum_of_cols = b_mat[:, letter].reshape(-1, 1) + tau_mat.T + emission_matrix[:, converting_dict[seq[letter]]].reshape(-1,1)
+        b_mat[:, letter-1] = logsumexp(sum_of_cols, axis=0)
     return b_mat
 
 
@@ -153,7 +151,6 @@ def posterior(f_mat, b_mat, k, seq):
             post_seq = "B" + post_seq
         else:
             post_seq = "M" + post_seq
-    x= 2
     return post_seq
 
 
@@ -175,8 +172,8 @@ def main():
     if args.alg == 'viterbi':
         v_matrix, t_matrix = viterbi(seq, tau, emission_table)
         viterbi_seq = trace_viterbi(v_matrix, t_matrix)
-        return viterbi_seq
-        # print_viterbi_output(args.seq, viterbi_seq)
+        # return viterbi_seq
+        print_viterbi_output(args.seq, viterbi_seq)
 
     elif args.alg == 'forward':
         f_mat = forward_algorithm(seq, tau,  emission_table, k)
@@ -196,18 +193,7 @@ def main():
         raise NotImplementedError
 
 
-
-
 if __name__ == '__main__':
     main()
-    # emission_table, k = read_emission("tata.tsv")
-    # # k = emission_table.shape[0]
-    # tau = init_tau(k, 0.1, 0.1)
-    # # seq = "TCGAATCCGTACGGTATTAAGTACGGCGCCTCGAATTCGAATCCGTACGGCGCCCCCCGTACGGCGCCTCGAAT"
-    # # seq = "TAGG"
-    # seq = "CTATTAAG"
-    # seq = edit_sequence(seq)
-    # # converted_seq = letters_to_numbers(seq, converting_dict)
-    # v_matrix, t_matrix = viterbi(seq, tau, emission_table)
-    # print(trace_viterbi(v_matrix, t_matrix))
+
 
