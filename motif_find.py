@@ -3,21 +3,10 @@ import numpy as np
 import math
 from scipy.special import logsumexp
 
+"A dictionary containing their base values ​​and numeric values"
 converting_dict = {"A": 0, "C": 1, "G": 2, "T": 3, "^": 4, "$": 5}
+
 LINE_LENGTH = 50
-
-
-# def letters_to_numbers(seq, d):
-#     """
-#     converting by dictionary dna to numbers and  numbers to dna
-#     :param seq: the first alignment
-#     :param d: the dictionary
-#     :return: the converted seq
-#     """
-#     keys, choices = list(zip(*d.items()))
-#     seq_a = np.array(keys)[:, None, None] == seq
-#     seq = np.select(seq_a, choices)[0]
-#     return seq
 
 
 def init_tau(k, p, q):  # whereas k = k + 4
@@ -143,14 +132,14 @@ def posterior(f_mat, b_mat, k, seq):
     curr = 0
     post_seq = ""
     post_mat = f_mat + b_mat
-    for letter in range(len(post_mat[0]) - 1, 1, -1):
+    for letter in range(len(seq) - 2, 0, -1):
         letter_col = post_mat[:, letter]
         curr = np.where(letter_col == max(letter_col))[0][0]
         # curr = post_mat[int(curr)][letter]
         if curr == 0 or curr == 1 or curr == k - 1 or curr == k - 2:
-            post_seq = "B" + post_seq
+            post_seq += "B"
         else:
-            post_seq = "M" + post_seq
+            post_seq += "M"
     return post_seq
 
 
