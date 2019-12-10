@@ -3,9 +3,12 @@ import numpy as np
 import math
 from scipy.special import logsumexp
 
+U_PROPABILITY = 0.25
+
 "A dictionary containing their base values ​​and numeric values"
 converting_dict = {"A": 0, "C": 1, "G": 2, "T": 3, "^": 4, "$": 5}
 
+"default line length for printiong"
 LINE_LENGTH = 50
 
 
@@ -30,7 +33,7 @@ def edit_sequence(seq):
 
 def read_emission(file):
     mat = np.genfromtxt(file, delimiter='\t', skip_header=1)
-    B_1_2 = np.full(4, 0.25)
+    B_1_2 = np.full(4, U_PROPABILITY)
     mat = np.vstack([mat, B_1_2])
     B_end_B_start = np.zeros(4)
     mat = np.vstack([mat, B_end_B_start])
@@ -51,12 +54,10 @@ def viterbi(seq, tau, emission_table):
     k = emission_table.shape[0]
     v_matrix = np.zeros((k, len(seq)))
     t_matrix = np.zeros((k, len(seq)))
-    v_matrix[0][0], t_matrix[0][0] = math.log(1), math.log(1)
+    v_matrix[0][0], t_matrix[0][0] = 1, 1
+    with np.errstate(divide='ignore'):
+        v_matrix = np.log(v_matrix)
     for letter in range(1, len(seq)):
-        # for state in range(k):  #todo
-        # prev_col = v_matrix[:, letter-1]
-        # tau_col = tau[:, state]
-        # temp_mult = prev_col + tau_col
         sum_of_cols = v_matrix[:, letter-1].reshape(-1, 1) + tau
         max_val = np.max(sum_of_cols,  axis=0).T
         argmax_index = np.argmax(sum_of_cols, axis=0).T
@@ -70,7 +71,7 @@ def trace_viterbi(v_matrix, t_matrix):
     last_col = v_matrix[:, len(v_matrix[0]) - 1]
     curr = np.where(last_col == max(last_col))[0][0]
     length = len(v_matrix) - 1
-    for letter in range(len(v_matrix[0]) - 1, 1, -1):  # until 1? 0?
+    for letter in range(len(v_matrix[0]) - 2, 0, -1):  #todo
         curr = t_matrix[int(curr)][letter]
         if curr == 0 or curr == 1 or curr == length or curr == length - 1:
             viterbi_seq = "B" + viterbi_seq
@@ -126,10 +127,10 @@ def backward_algorithm(seq, tau_mat,  emission_matrix, k):
 
 
 def posterior(f_mat, b_mat, k, seq):
-    post_mat = np.zeros((k, len(seq)))
-    with np.errstate(divide='ignore'):
-        post_mat = np.log(post_mat)
-    curr = 0
+    # post_mat = np.zeros((k, len(seq)))
+    # with np.errstate(divide='ignore'):
+    #     post_mat = np.log(post_mat)
+    # curr = 0
     post_seq = ""
     post_mat = f_mat + b_mat
     for letter in range(len(seq) - 2, 0, -1):
